@@ -1,7 +1,8 @@
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-import asyncio, json, os
-import asyncpg
+import json, os
+import psycopg2
+import psycopg2.extras
 
 DB = os.environ.get("DATABASE_URL", "")
 
@@ -10,20 +11,21 @@ class handler(BaseHTTPRequestHandler):
         try:
             params = parse_qs(urlparse(self.path).query)
             limit = int(params.get("limit", ["10"])[0])
-            rows = asyncio.run(self._fetch(limit))
-            self._respond(200, rows)
+            self._respond(200, self._fetch(limit))
         except Exception as e:
             self._respond(500, {"error": str(e)})
 
-    async def _fetch(self, limit):
-        conn = await asyncpg.connect(DB, statement_cache_size=0)
+    def _fetch(self, limit):
+        conn = psycopg2.connect(DB)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
-            rows = await conn.fetch(
-                "SELECT * FROM runs ORDER BY started_at DESC LIMIT $1", limit
+            cur.execute(
+                "SELECT * FROM runs ORDER BY started_at DESC LIMIT %s", (limit,)
             )
-            return [dict(r) for r in rows]
+            return [dict(r) for r in cur.fetchall()]
         finally:
-            await conn.close()
+            cur.close()
+            conn.close()
 
     def _respond(self, code, data):
         self.send_response(code)
