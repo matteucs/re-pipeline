@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deal Finder — Real Estate Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #ffffff;
+  --bg2:       #fafaf8;
+  --bg3:       #f4f3ef;
+  --border:    #e8e6e0;
+  --border2:   #d8d5ce;
+  --text:      #1a1814;
+  --text2:     #6b6760;
+  --text3:     #a8a49d;
+  --navy:      #1a2744;
+  --navy2:     #243260;
+  --green:     #1a6b4a;
+  --green-bg:  #edf7f2;
+  --amber:     #b45309;
+  --amber-bg:  #fef3e2;
+  --blue:      #1d4ed8;
+  --blue-bg:   #eff6ff;
+  --red:       #dc2626;
+  --red-bg:    #fef2f2;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04);
+  --radius:    12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg2);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+header {
+  background: var(--navy);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 62px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.logo { display: flex; align-items: center; gap: 14px }
+.logo-mark {
+  width: 34px; height: 34px;
+  background: #fff;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.logo-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: #fff }
+.logo-subtitle { font-size: 11px; color: rgba(255,255,255,0.5); font-family: 'DM Mono', monospace; font-weight: 300; margin-top: 1px }
+.header-meta { display: flex; align-items: center; gap: 20px }
+.live-badge {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px; padding: 5px 12px;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: blink 2.5s ease infinite }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.live-text { font-size: 11px; color: rgba(255,255,255,0.7); font-family: 'DM Mono', monospace; font-weight: 300 }
+#last-run { font-size: 11px; color: rgba(255,255,255,0.45); font-family: 'DM Mono', monospace; font-weight: 300 }
+
+.statstrip {
+  display: grid; grid-template-columns: repeat(6,1fr);
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.stat-cell {
+  padding: 18px 24px; border-right: 1px solid var(--border);
+  position: relative; transition: background 0.15s;
+}
+.stat-cell:last-child { border-right: none }
+.stat-cell:hover { background: var(--bg2) }
+.stat-cell::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background: transparent; transition: background 0.2s;
+}
+.stat-cell.hl::before  { background: var(--navy) }
+.stat-cell.hl-g::before { background: var(--green) }
+.stat-cell.hl-r::before { background: var(--red) }
+.stat-label { font-size:10px; font-family:'DM Mono',monospace; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px }
+.stat-value { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; letter-spacing:-0.5px; line-height:1 }
+.stat-value.green { color: var(--green) }
+.stat-value.red   { color: var(--red) }
+.stat-value.navy  { color: var(--navy) }
+
+.tab-nav {
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  padding: 0 32px; display: flex;
+}
+.tab-btn {
+  padding: 14px 22px; font-size: 13px; font-weight: 500;
+  color: var(--text3); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.18s;
+  user-select: none; display: flex; align-items: center; gap: 7px;
+}
+.tab-btn:hover { color: var(--text2) }
+.tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); font-weight: 600 }
+.tab-icon { font-size: 14px }
+
+.toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 32px; background: var(--bg);
+  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.toolbar-group { display: flex; align-items: center; gap: 7px }
+.toolbar-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3) }
+select {
+  appearance: none;
+  background: var(--bg2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a8a49d' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border: 1px solid var(--border2); color: var(--text);
+  padding: 6px 28px 6px 11px; border-radius: var(--radius-sm);
+  font-size: 12px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+  cursor: pointer; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+select:hover { box-shadow: var(--shadow-sm) }
+select:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(26,39,68,0.08) }
+.result-count {
+  margin-left: auto; font-size: 11px; font-family: 'DM Mono', monospace;
+  color: var(--text3); background: var(--bg3);
+  padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+}
+
+.panel { display:none; padding: 28px 32px }
+.panel.active { display:block }
+
+.market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap: 16px }
+.market-card {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  animation: fadeUp 0.4s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.market-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--border2) }
+.market-card.rank-1 { border-color: var(--navy); border-width: 1.5px }
+
+.mc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px }
+.mc-city { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; line-height: 1.1 }
+.mc-state-tag {
+  display: inline-block; font-size: 10px; font-family: 'DM Mono', monospace;
+  color: var(--text2); background: var(--bg3);
+  border: 1px solid var(--border); padding: 2px 8px;
+  border-radius: 4px; margin-top: 5px; letter-spacing: 0.5px;
+}
+.mc-rank-badge { display: flex; flex-direction: column; align-items: flex-end }
+.mc-score-num { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -1px }
+.mc-score-label { font-size: 9px; font-family: 'DM Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px }
+.score-high { color: var(--green) }
+.score-mid  { color: var(--navy) }
+.score-low  { color: var(--amber) }
+
+.mc-divider { height: 1px; background: var(--border); margin: 14px 0 }
+.mc-bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px }
+.bar-row { display: grid; grid-template-columns: 62px 1fr 34px; align-items: center; gap: 10px }
+.bar-name { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px }
+.bar-track { height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.7s cubic-bezier(.4,0,.2,1) }
+.bar-pct { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); text-align: right }
+
+.mc-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+.mc-kv { display: flex; flex-direction: column; gap: 2px }
+.mc-kv-label { font-size: 9px; font-family: 'DM Mono', monospace; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px }
+.mc-kv-val { font-size: 13px; font-weight: 600; color: var(--text) }
+
+.table-wrap {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden;
+}
+.listings-table { width: 100%; border-collapse: collapse }
+.listings-table thead { background: var(--bg2); border-bottom: 1px solid var(--border) }
+.listings-table th {
+  padding: 11px 16px; text-align: left;
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px;
+  font-weight: 400; white-space: nowrap;
+}
+.listings-table td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 13px }
+.listings-table tbody tr:last-child td { border-bottom: none }
+.listings-table tbody tr { transition: background 0.12s; animation: fadeIn 0.3s ease both }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.listings-table tbody tr:hover { background: var(--bg2) }
+
+.prop-name { font-weight: 600; font-size: 13px; line-height: 1.3 }
+.prop-sub { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); margin-top: 2px; font-weight: 300 }
+
+.score-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 46px; height: 26px; border-radius: 6px;
+  font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace;
+}
+.chip-high { background: var(--green-bg); color: var(--green) }
+.chip-mid  { background: var(--blue-bg);  color: var(--blue)  }
+.chip-low  { background: var(--amber-bg); color: var(--amber) }
+
+.mini-bar-wrap { display: flex; align-items: center; gap: 7px }
+.mini-track { width: 52px; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; flex-shrink: 0 }
+.mini-fill { height: 100%; border-radius: 2px }
+.mini-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); width: 24px; text-align: right }
+
+.pill {
+  display: inline-block; font-size: 9px; font-family: 'DM Mono', monospace;
+  padding: 3px 7px; border-radius: 20px; margin-right: 3px;
+  font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.pill-hot    { background: var(--green-bg); color: var(--green) }
+.pill-growth { background: var(--blue-bg);  color: var(--blue)  }
+.pill-value  { background: var(--amber-bg); color: var(--amber) }
+
+.view-link {
+  font-size: 11px; font-family: 'DM Mono', monospace;
+  color: var(--navy); text-decoration: none; font-weight: 500;
+  opacity: 0.6; transition: opacity 0.15s; white-space: nowrap;
+}
+.view-link:hover { opacity: 1 }
+.mono-sm { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); font-weight: 300 }
+
+.empty-state { text-align: center; padding: 56px 24px; color: var(--text3) }
+.empty-icon { font-size: 36px; margin-bottom: 14px; opacity: 0.5 }
+.empty-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text2); margin-bottom: 6px }
+.empty-sub { font-size: 12px; font-family: 'DM Mono', monospace; font-weight: 300 }
+
+@media(max-width:900px) {
+  .statstrip { grid-template-columns: repeat(3,1fr) }
+  .panel { padding: 20px 16px }
+  header,.tab-nav,.toolbar { padding-left:16px; padding-right:16px }
+}
+@media(max-width:560px) {
+  .statstrip { grid-template-columns: repeat(2,1fr) }
+  .stat-cell:nth-child(5),.stat-cell:nth-child(6) { display:none }
+  .market-grid { grid-template-columns: 1fr }
+  #last-run { display:none }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🏢</div>
+    <div>
+      <div class="logo-title">Deal Finder</div>
+      <div class="logo-subtitle">Real Estate Intelligence Platform</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <span class="live-text">LIVE</span>
+    </div>
+    <span id="last-run">—</span>
+  </div>
+</header>
+
+<div class="statstrip">
+  <div class="stat-cell hl">
+    <div class="stat-label">Markets Tracked</div>
+    <div class="stat-value navy" id="s-markets">—</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Properties Scored</div>
+    <div class="stat-value" id="s-total">—</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Avg Deal Score</div>
+    <div class="stat-value" id="s-avg">—</div>
+  </div>
+  <div class="stat-cell hl">
+    <div class="stat-label">Top Score</div>
+    <div class="stat-value navy" id="s-top">—</div>
+  </div>
+  <div class="stat-cell hl-g">
+    <div class="stat-label">Hot Deals (80+)</div>
+    <div class="stat-value green" id="s-hot">—</div>
+  </div>
+  <div class="stat-cell hl-r">
+    <div class="stat-label">Active Alerts</div>
+    <div class="stat-value red" id="s-alerts">—</div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="tab-btn active" data-tab="markets"><span class="tab-icon">🗺</span> Market Overview</div>
+  <div class="tab-btn" data-tab="listings"><span class="tab-icon">🏗</span> Property Listings</div>
+</div>
+
+<div class="panel active" id="panel-markets">
+  <div class="toolbar" style="margin:-28px -32px 24px;padding:14px 32px">
+    <div class="toolbar-group">
+      <span class="toolbar-label">Sort by</span>
+      <select id="m-sort">
+        <option value="deal_score">Deal Score</option>
+        <option value="traffic_score">Traffic Score</option>
+        <option value="growth_score">Growth Score</option>
+        <option value="value_score">Value Score</option>
+        <option value="aadt">AADT</option>
+      </select>
+    </div>
+    <div class="toolbar-group">
+      <span class="toolbar-label">Min score</span>
+      <select id="m-min-score">
+        <option value="0">Any</option>
+        <option value="40">40+</option>
+        <option value="50" selected>50+</option>
+        <option value="60">60+</option>
+        <option value="70">70+</option>
+      </select>
+    </div>
+    <span class="result-count" id="m-count">— markets</span>
+  </div>
+  <div class="market-grid" id="market-grid">
+    <div class="empty-state">
+      <div class="empty-icon">⏳</div>
+      <div class="empty-title">Loading markets</div>
+      <div class="empty-sub">fetching data from pipeline...</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-listings">
+  <div class="toolbar" style="margin:-28px -32px 24px;padding:14px 32px">
+    <div class="toolbar-group">
+      <span class="toolbar-label">Market</span>
+      <select id="l-market"><option value="">All markets</option></select>
+    </div>
+    <div class="toolbar-group">
+      <span class="toolbar-label">Type</span>
+      <select id="l-type">
+        <option value="">All types</option>
+        <option value="Commercial">Commercial</option>
+        <option value="Retail">Retail</option>
+        <option value="Industrial">Industrial</option>
+        <option value="Mixed-use">Mixed-use</option>
+        <option value="Land">Land</option>
+        <option value="Market">Market Overview</option>
+      </select>
+    </div>
+    <div class="toolbar-group">
+      <span class="toolbar-label">Min score</span>
+      <select id="l-score">
+        <option value="0">Any</option>
+        <option value="40">40+</option>
+        <option value="50" selected>50+</option>
+        <option value="60">60+</option>
+        <option value="70">70+</option>
+        <option value="80">80+</option>
+      </select>
+    </div>
+    <div class="toolbar-group">
+      <span class="toolbar-label">Sort</span>
+      <select id="l-sort">
+        <option value="deal_score">Deal Score</option>
+        <option value="traffic_score">Traffic</option>
+        <option value="growth_score">Growth</option>
+        <option value="value_score">Value</option>
+        <option value="price">Price (low)</option>
+        <option value="aadt">AADT</option>
+      </select>
+    </div>
+    <span class="result-count" id="l-count">— properties</span>
+  </div>
+  <div class="table-wrap">
+    <table class="listings-table">
+      <thead>
+        <tr>
+          <th>Property</th><th>Score</th><th>Traffic</th><th>Growth</th>
+          <th>Value</th><th>AADT</th><th>Price</th><th>Type</th><th>Tags</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="listings-body">
+        <tr><td colspan="10"><div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <div class="empty-title">Loading properties</div>
+          <div class="empty-sub">fetching from database...</div>
+        </div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API = 'https://re-pipeline-five.vercel.app';
+let allProperties = [];
+
+function scoreClass(v) { return v>=70?'score-high':v>=50?'score-mid':'score-low' }
+function chipClass(v)  { return v>=70?'chip-high':v>=50?'chip-mid':'chip-low' }
+function barColor(v)   { return v>=70?'#1a6b4a':v>=45?'#1d4ed8':'#b45309' }
+function fmt(v,d=1)    { return v!=null?Number(v).toFixed(d):'—' }
+function fmtPrice(p)   { return (!p||p===0)?'—':'$'+(p/1e6).toFixed(1)+'M' }
+function fmtNum(n)     { return n?Number(n).toLocaleString():'—' }
+function fmtK(n)       { return !n?'—':n>=1e6?(n/1e6).toFixed(2)+'M':(n/1000).toFixed(0)+'k' }
+
+function tags(p) {
+  const t=[];
+  if(p.deal_score>=80)   t.push('<span class="pill pill-hot">Hot</span>');
+  if(p.growth_score>=60) t.push('<span class="pill pill-growth">Growth</span>');
+  if(p.value_score>=60)  t.push('<span class="pill pill-value">Value</span>');
+  return t.join('');
+}
+
+function renderMarketCard(p, rank) {
+  return `
+    <div class="market-card${rank===0?' rank-1':''}" style="animation-delay:${rank*0.05}s">
+      <div class="mc-header">
+        <div>
+          <div class="mc-city">${p.city}</div>
+          <span class="mc-state-tag">${p.state}</span>
+        </div>
+        <div class="mc-rank-badge">
+          <div class="mc-score-num ${scoreClass(p.deal_score)}">${fmt(p.deal_score)}</div>
+          <div class="mc-score-label">deal score</div>
+        </div>
+      </div>
+      <div class="mc-bars">
+        ${[['Traffic',p.traffic_score],['Growth',p.growth_score],['Value',p.value_score]].map(([l,v])=>`
+          <div class="bar-row">
+            <span class="bar-name">${l}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${v||0}%;background:${barColor(v||0)}"></div></div>
+            <span class="bar-pct">${fmt(v,0)}</span>
+          </div>`).join('')}
+      </div>
+      <div class="mc-divider"></div>
+      <div class="mc-footer">
+        <div class="mc-kv"><span class="mc-kv-label">AADT</span><span class="mc-kv-val">${fmtNum(p.aadt)}</span></div>
+        <div class="mc-kv"><span class="mc-kv-label">Population</span><span class="mc-kv-val">${fmtK(p.population)}</span></div>
+        <div class="mc-kv"><span class="mc-kv-label">Median Income</span><span class="mc-kv-val">${p.median_income?'$'+fmtK(p.median_income):'—'}</span></div>
+        <div class="mc-kv"><span class="mc-kv-label">Job Growth</span><span class="mc-kv-val">${fmt(p.job_growth_pct)}%</span></div>
+      </div>
+    </div>`;
+}
+
+function renderMarkets() {
+  const sk = document.getElementById('m-sort').value;
+  const ms = parseFloat(document.getElementById('m-min-score').value);
+  let markets = allProperties.filter(p=>p.deal_score>=ms).sort((a,b)=>(b[sk]||0)-(a[sk]||0));
+  document.getElementById('m-count').textContent = markets.length+' markets';
+  const grid = document.getElementById('market-grid');
+  if(!markets.length){
+    grid.innerHTML=`<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No markets found</div><div class="empty-sub">try adjusting your filters</div></div>`;
+    return;
+  }
+  grid.innerHTML = markets.map((p,i)=>renderMarketCard(p,i)).join('');
+}
+
+function renderListings() {
+  const mf = document.getElementById('l-market').value;
+  const tf = document.getElementById('l-type').value;
+  const ms = parseFloat(document.getElementById('l-score').value);
+  const sk = document.getElementById('l-sort').value;
+  let rows = allProperties
+    .filter(p=>p.deal_score>=ms&&(!mf||p.market===mf)&&(!tf||p.property_type===tf))
+    .sort((a,b)=>sk==='price'?(a.price||0)-(b.price||0):(b[sk]||0)-(a[sk]||0));
+  document.getElementById('l-count').textContent = rows.length+' properties';
+  const tbody = document.getElementById('listings-body');
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No properties found</div><div class="empty-sub">try adjusting your filters</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map((p,i)=>`
+    <tr style="animation-delay:${i*0.03}s">
+      <td><div class="prop-name">${p.name}</div><div class="prop-sub">${p.market}</div></td>
+      <td><span class="score-chip ${chipClass(p.deal_score)}">${fmt(p.deal_score)}</span></td>
+      <td><div class="mini-bar-wrap"><div class="mini-track"><div class="mini-fill" style="width:${p.traffic_score||0}%;background:${barColor(p.traffic_score||0)}"></div></div><span class="mini-label">${fmt(p.traffic_score,0)}</span></div></td>
+      <td><div class="mini-bar-wrap"><div class="mini-track"><div class="mini-fill" style="width:${p.growth_score||0}%;background:${barColor(p.growth_score||0)}"></div></div><span class="mini-label">${fmt(p.growth_score,0)}</span></div></td>
+      <td><div class="mini-bar-wrap"><div class="mini-track"><div class="mini-fill" style="width:${p.value_score||0}%;background:${barColor(p.value_score||0)}"></div></div><span class="mini-label">${fmt(p.value_score,0)}</span></div></td>
+      <td><span class="mono-sm">${fmtNum(p.aadt)}</span></td>
+      <td><span class="mono-sm">${fmtPrice(p.price)}</span></td>
+      <td><span class="mono-sm">${p.property_type||'—'}</span></td>
+      <td>${tags(p)}</td>
+      <td>${p.listing_url?`<a class="view-link" href="${p.listing_url}" target="_blank">View →</a>`:''}</td>
+    </tr>`).join('');
+}
+
+async function loadStats() {
+  try {
+    const s = await fetch(`${API}/api/stats`).then(r=>r.json());
+    document.getElementById('s-markets').textContent = s.markets_covered??'—';
+    document.getElementById('s-total').textContent   = s.total_properties??'—';
+    document.getElementById('s-avg').textContent     = s.avg_score??'—';
+    document.getElementById('s-top').textContent     = s.top_score??'—';
+    document.getElementById('s-hot').textContent     = s.hot_deals??0;
+    document.getElementById('s-alerts').textContent  = s.unacknowledged_alerts??0;
+  } catch(e){console.error('Stats:',e)}
+}
+
+async function loadRuns() {
+  try {
+    const runs = await fetch(`${API}/api/runs?limit=1`).then(r=>r.json());
+    if(runs.length){
+      const d = new Date(runs[0].started_at);
+      document.getElementById('last-run').textContent =
+        'Last run '+d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+
+        ' at '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    }
+  } catch(e){}
+}
+
+async function loadProperties() {
+  try {
+    allProperties = await fetch(`${API}/api/properties?limit=200&min_score=0`).then(r=>r.json());
+    const markets = [...new Set(allProperties.map(p=>p.market))].sort();
+    const sel = document.getElementById('l-market');
+    markets.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o)});
+    renderMarkets();
+    renderListings();
+  } catch(e){
+    document.getElementById('market-grid').innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Unable to load data</div><div class="empty-sub">check API connection</div></div>`;
+  }
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+['m-sort','m-min-score'].forEach(id=>document.getElementById(id).addEventListener('change',renderMarkets));
+['l-market','l-type','l-score','l-sort'].forEach(id=>document.getElementById(id).addEventListener('change',renderListings));
+
+loadStats();
+loadRuns();
+loadProperties();
+</script>
+</body>
+</html>
