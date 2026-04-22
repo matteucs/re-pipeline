@@ -1,0 +1,30 @@
+markets:
+  - "Nashville, TN"
+  - "Austin, TX"
+  - "Phoenix, AZ"
+  - "Raleigh, NC"
+  - "Tampa, FL"
+  - "Charlotte, NC"
+  - "Atlanta, GA"
+  - "Denver, CO"
+
+api_keys:
+  census: ""
+  bls: ""
+  hud: ""
+
+scoring_weights:
+  traffic: 0.35
+  growth: 0.40
+  value: 0.25
+
+schedule:
+  cron: "0 6 * * *"
+
+alert_thresholds:
+  hot_deal: 80
+  price_drop_pct: 5
+  score_spike_pts: 10
+
+cache_dir: ".cache"
+cache_ttl_hours: 12
