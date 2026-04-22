@@ -1,1 +1,6 @@
+asyncpg
 psycopg2-binary
+aiohttp
+pyyaml
+apscheduler
+aiosqlite
