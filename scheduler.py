@@ -956,7 +956,7 @@ async def run_forever():
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         run_pipeline,
-        CronTrigger.from_crontab("0 6 * * *"),
+        CronTrigger.from_crontab("0 6 * * 1"),
         id="pipeline_run",
         name="Real estate pipeline",
         max_instances=1,
