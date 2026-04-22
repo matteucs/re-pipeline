@@ -1,7 +1,8 @@
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-import asyncio, json, os
-import asyncpg
+import json, os
+import psycopg2
+import psycopg2.extras
 
 DB = os.environ.get("DATABASE_URL", "")
 
@@ -12,31 +13,37 @@ class handler(BaseHTTPRequestHandler):
             limit     = int(params.get("limit",      ["25"])[0])
             min_score = float(params.get("min_score", ["50"])[0])
             market    = params.get("market", [None])[0]
-            rows = asyncio.run(self._fetch(limit, min_score, market))
+            rows = self._fetch(limit, min_score, market)
             self._respond(200, rows)
         except Exception as e:
             self._respond(500, {"error": str(e)})
 
-    async def _fetch(self, limit, min_score, market):
-        conn = await asyncpg.connect(DB, statement_cache_size=0)
+    def _fetch(self, limit, min_score, market):
+        conn = psycopg2.connect(DB)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
-            q = """
-                SELECT * FROM properties
-                WHERE deal_score >= $1
-                AND run_id = (
-                    SELECT MAX(id) FROM runs WHERE status = 'success'
-                )
-            """
-            args = [min_score]
             if market:
-                q += " AND market = $2"
-                args.append(market)
-            q += f" ORDER BY deal_score DESC LIMIT ${len(args) + 1}"
-            args.append(limit)
-            rows = await conn.fetch(q, *args)
-            return [dict(r) for r in rows]
+                cur.execute("""
+                    SELECT * FROM properties
+                    WHERE deal_score >= %s AND market = %s
+                    AND run_id = (
+                        SELECT MAX(id) FROM runs WHERE status = 'success'
+                    )
+                    ORDER BY deal_score DESC LIMIT %s
+                """, (min_score, market, limit))
+            else:
+                cur.execute("""
+                    SELECT * FROM properties
+                    WHERE deal_score >= %s
+                    AND run_id = (
+                        SELECT MAX(id) FROM runs WHERE status = 'success'
+                    )
+                    ORDER BY deal_score DESC LIMIT %s
+                """, (min_score, limit))
+            return [dict(r) for r in cur.fetchall()]
         finally:
-            await conn.close()
+            cur.close()
+            conn.close()
 
     def _respond(self, code, data):
         self.send_response(code)
