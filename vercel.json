@@ -1,18 +1,17 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/*.py",
-      "use": "@vercel/python"
-    }
+    { "src": "api/*.py", "use": "@vercel/python" },
+    { "src": "public/**", "use": "@vercel/static" }
   ],
   "routes": [
-    { "src": "/api/health", "dest": "/api/health.py" },
-    { "src": "/api/stats", "dest": "/api/stats.py" },
+    { "src": "/api/health",     "dest": "/api/health.py" },
+    { "src": "/api/stats",      "dest": "/api/stats.py" },
     { "src": "/api/properties", "dest": "/api/properties.py" },
-    { "src": "/api/alerts", "dest": "/api/alerts.py" },
-    { "src": "/api/watchlist", "dest": "/api/watchlist.py" },
-    { "src": "/api/runs", "dest": "/api/runs.py" },
-    { "src": "/api/trigger", "dest": "/api/trigger.py" }
+    { "src": "/api/alerts",     "dest": "/api/alerts.py" },
+    { "src": "/api/watchlist",  "dest": "/api/watchlist.py" },
+    { "src": "/api/runs",       "dest": "/api/runs.py" },
+    { "src": "/api/trigger",    "dest": "/api/trigger.py" },
+    { "src": "/(.*)",           "dest": "/public/index.html" }
   ]
 }
