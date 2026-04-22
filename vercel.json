@@ -5,5 +5,14 @@
       "src": "api/*.py",
       "use": "@vercel/python"
     }
+  ],
+  "routes": [
+    { "src": "/api/health", "dest": "/api/health.py" },
+    { "src": "/api/stats", "dest": "/api/stats.py" },
+    { "src": "/api/properties", "dest": "/api/properties.py" },
+    { "src": "/api/alerts", "dest": "/api/alerts.py" },
+    { "src": "/api/watchlist", "dest": "/api/watchlist.py" },
+    { "src": "/api/runs", "dest": "/api/runs.py" },
+    { "src": "/api/trigger", "dest": "/api/trigger.py" }
   ]
 }
