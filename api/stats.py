@@ -1,21 +1,23 @@
 from http.server import BaseHTTPRequestHandler
-import asyncio, json, os
-import asyncpg
+import json, os
+import psycopg2
+import psycopg2.extras
 
 DB = os.environ.get("DATABASE_URL", "")
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            data = asyncio.run(self._fetch())
+            data = self._fetch()
             self._respond(200, data)
         except Exception as e:
             self._respond(500, {"error": str(e)})
 
-    async def _fetch(self):
-        conn = await asyncpg.connect(DB, statement_cache_size=0)
+    def _fetch(self):
+        conn = psycopg2.connect(DB)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
-            row = await conn.fetchrow("""
+            cur.execute("""
                 SELECT
                     COUNT(*)                                            AS total_properties,
                     ROUND(AVG(deal_score)::numeric, 1)                 AS avg_score,
@@ -27,8 +29,10 @@ class handler(BaseHTTPRequestHandler):
                     SELECT MAX(id) FROM runs WHERE status = 'success'
                 )
             """)
+            row = cur.fetchone()
             stats = dict(row) if row else {}
-            dist = await conn.fetch("""
+
+            cur.execute("""
                 SELECT (deal_score/10)::int * 10 AS bucket, COUNT(*) AS count
                 FROM properties
                 WHERE run_id = (
@@ -36,16 +40,18 @@ class handler(BaseHTTPRequestHandler):
                 )
                 GROUP BY bucket ORDER BY bucket
             """)
-            stats["score_distribution"] = [dict(r) for r in dist]
-            alerts_count = await conn.fetchval(
-                "SELECT COUNT(*) FROM alerts WHERE acknowledged = FALSE"
+            stats["score_distribution"] = [dict(r) for r in cur.fetchall()]
+
+            cur.execute(
+                "SELECT COUNT(*) as count FROM alerts WHERE acknowledged = FALSE"
             )
-            stats["unacknowledged_alerts"] = int(alerts_count or 0)
-            return {k: (int(v) if hasattr(v, '__int__') 
+            stats["unacknowledged_alerts"] = cur.fetchone()["count"]
+            return {k: (int(v) if hasattr(v, '__int__')
                        and not isinstance(v, float) else v)
                     for k, v in stats.items()}
         finally:
-            await conn.close()
+            cur.close()
+            conn.close()
 
     def _respond(self, code, data):
         self.send_response(code)
