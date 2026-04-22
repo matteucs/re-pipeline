@@ -1,14 +1,14 @@
 from http.server import BaseHTTPRequestHandler
-import asyncio, json, os
-import asyncpg
+import json, os
+import psycopg2
+import psycopg2.extras
 
 DB = os.environ.get("DATABASE_URL", "")
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            rows = asyncio.run(self._fetch())
-            self._respond(200, rows)
+            self._respond(200, self._fetch())
         except Exception as e:
             self._respond(500, {"error": str(e)})
 
@@ -16,35 +16,41 @@ class handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length))
-            result = asyncio.run(self._insert(body))
-            self._respond(201, result)
+            self._respond(201, self._insert(body))
         except Exception as e:
             self._respond(500, {"error": str(e)})
 
-    async def _fetch(self):
-        conn = await asyncpg.connect(DB, statement_cache_size=0)
+    def _fetch(self):
+        conn = psycopg2.connect(DB)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
-            rows = await conn.fetch("SELECT * FROM watchlist WHERE active = TRUE")
-            return [dict(r) for r in rows]
+            cur.execute("SELECT * FROM watchlist WHERE active = TRUE")
+            return [dict(r) for r in cur.fetchall()]
         finally:
-            await conn.close()
+            cur.close()
+            conn.close()
 
-    async def _insert(self, body):
-        conn = await asyncpg.connect(DB, statement_cache_size=0)
+    def _insert(self, body):
+        conn = psycopg2.connect(DB)
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         try:
-            row = await conn.fetchrow(
-                """INSERT INTO watchlist
-                   (label, market, property_type, min_deal_score, min_traffic, max_price_m)
-                   VALUES ($1,$2,$3,$4,$5,$6) RETURNING id""",
+            cur.execute("""
+                INSERT INTO watchlist
+                (label, market, property_type, min_deal_score, min_traffic, max_price_m)
+                VALUES (%s,%s,%s,%s,%s,%s) RETURNING id
+            """, (
                 body.get("label"), body.get("market"),
                 body.get("property_type"),
                 body.get("min_deal_score", 70),
                 body.get("min_traffic", 0),
                 body.get("max_price_m"),
-            )
+            ))
+            conn.commit()
+            row = cur.fetchone()
             return {"id": row["id"], "label": body.get("label")}
         finally:
-            await conn.close()
+            cur.close()
+            conn.close()
 
     def _respond(self, code, data):
         self.send_response(code)
